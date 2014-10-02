@@ -31,7 +31,7 @@ public class DemoForCarmera extends Activity implements
 	CameraHelper mCameraHelper;
 
 	private Camera mCamera;
-	private TextureView mTextureView;
+	private com.example.demoforcarmera.view.CameraPreviewTextureView mTextureView;
 	private Button flashMode;
 
 	private int flash_state = 0;
@@ -45,7 +45,7 @@ public class DemoForCarmera extends Activity implements
 
 		setContentView(R.layout.activity_demo_for_carmera);
 
-		mTextureView = (TextureView) findViewById(R.id.surface_view);
+		mTextureView = (com.example.demoforcarmera.view.CameraPreviewTextureView) findViewById(R.id.surface_view);
 		mTextureView.setSurfaceTextureListener(this);
 
 		flashMode = (Button) findViewById(R.id.flash_mode);
