@@ -22,26 +22,22 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
+import com.example.demoforcarmera.util.CameraController;
 import com.example.demoforcarmera.util.CameraHelper;
 import com.example.demoforcarmera.util.CameraHelper.CameraInfo2;
 
 public class DemoForCarmera extends Activity implements
 		TextureView.SurfaceTextureListener {
 
-	CameraHelper mCameraHelper;
-
-	private Camera mCamera;
 	private TextureView mTextureView;
 	private Button flashMode;
 
-	private int flash_state = 0;
-
-	private int currentCameraId = 0;
+	CameraController mCameraController;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		mCameraHelper = new CameraHelper(this);
+		mCameraController = new CameraController(this);
 
 		setContentView(R.layout.activity_demo_for_carmera);
 
@@ -55,7 +51,7 @@ public class DemoForCarmera extends Activity implements
 			@Override
 			public void onClick(View v) {
 
-				changeFlashMode();
+				mCameraController.changeFlashMode();
 			}
 		});
 
@@ -63,29 +59,24 @@ public class DemoForCarmera extends Activity implements
 
 			@Override
 			public void onClick(View v) {
-				mCamera.autoFocus(new Camera.AutoFocusCallback() {
 
-					@Override
-					public void onAutoFocus(boolean success, Camera camera) {
-
-						takePicture();
-					}
-
-				});
+				mCameraController.takeByAutoFocus(
+						getOutputMediaFile(MEDIA_TYPE_IMAGE).getAbsolutePath(),
+						1280, 720);
 			}
 		});
 
-		if (mCameraHelper.hasFrontCamera() && mCameraHelper.hasBackCamera()) {
+		if (mCameraController.getCameraCount() > 1) {
 			findViewById(R.id.change_camera).setOnClickListener(
 					new OnClickListener() {
 
 						@Override
 						public void onClick(View v) {
 
-							switchCamera();
-							CameraInfo2 cameraInfo = new CameraInfo2();
-							mCameraHelper.getCameraInfo(currentCameraId,
-									cameraInfo);
+							mCameraController.switchCamera(mTextureView
+									.getSurfaceTexture());
+							CameraInfo2 cameraInfo = mCameraController
+									.getCameraInfo();
 							if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
 								flashMode.setEnabled(false);
 							} else {
@@ -102,7 +93,7 @@ public class DemoForCarmera extends Activity implements
 
 	public void onSurfaceTextureAvailable(SurfaceTexture surface, int width,
 			int height) {
-		setupCamera(surface);
+		mCameraController.setupCamera(surface);
 	}
 
 	protected Size getSize(List<Size> previewSize) {
@@ -127,109 +118,6 @@ public class DemoForCarmera extends Activity implements
 			return temp;
 		}
 
-	}
-
-	protected void changeFlashMode() {
-		Parameters parameters = mCamera.getParameters();
-
-		switch (flash_state) {
-		case 0:
-			flash_state = 1;
-			parameters.setFlashMode(Parameters.FLASH_MODE_ON);
-			flashMode.setText("Flash On");
-			break;
-		case 1:
-			flash_state = 2;
-			parameters.setFlashMode(Parameters.FLASH_MODE_AUTO);
-			flashMode.setText("Flash Auto");
-			break;
-		case 2:
-			flash_state = 0;
-			parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
-			flashMode.setText("Flash Off");
-			break;
-		}
-
-		mCamera.setParameters(parameters);
-		mCamera.stopPreview();
-		mCamera.startPreview();
-	}
-
-	public void switchCamera() {
-		mCamera.stopPreview();
-		mCamera.release();
-		currentCameraId = (currentCameraId + 1)
-				% mCameraHelper.getNumberOfCameras();
-		setupCamera(mTextureView.getSurfaceTexture());
-
-	}
-
-	public void setupCamera(SurfaceTexture surface) {
-		mCamera = mCameraHelper.openCamera(currentCameraId);
-		initCamera();
-		try {
-			mCamera.setPreviewTexture(surface);
-			mCamera.startPreview();
-		} catch (IOException ioe) {
-		}
-	}
-
-	protected void initCamera() {
-		Parameters parameters = mCamera.getParameters();
-		// TODO adjust by getting supportedPreviewSizes and then choosing
-		// the best one for screen size (best fill screen)
-		List<Size> previewSize = parameters.getSupportedPreviewSizes();
-		Size mSize = getSize(previewSize);
-
-		Log.e("preView", "preView Size width:" + mSize.width + " , height: "
-				+ mSize.height);
-		parameters.setPreviewSize(mSize.width, mSize.height);
-		parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
-		if (parameters.getSupportedFocusModes().contains(
-				Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-			parameters
-					.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-		}
-		mCamera.setParameters(parameters);
-		mCamera.setDisplayOrientation(90);
-	}
-
-	private void takePicture() {
-		// TODO get a size that is about the size of the screen
-		Camera.Parameters params = mCamera.getParameters();
-		params.setPictureSize(1280, 960);
-		params.setRotation(mCameraHelper.getCameraDisplayOrientation(this,
-				currentCameraId));
-		mCamera.setParameters(params);
-		for (Camera.Size size2 : mCamera.getParameters()
-				.getSupportedPictureSizes()) {
-			Log.i("ASDF", "Supported: " + size2.width + "x" + size2.height);
-		}
-
-		mCamera.takePicture(null, null, new Camera.PictureCallback() {
-
-			@Override
-			public void onPictureTaken(byte[] data, final Camera camera) {
-
-				final File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
-				if (pictureFile == null) {
-					Log.d("ASDF",
-							"Error creating media file, check storage permissions");
-					return;
-				}
-
-				try {
-					FileOutputStream fos = new FileOutputStream(pictureFile);
-					fos.write(data);
-					fos.close();
-				} catch (FileNotFoundException e) {
-					Log.d("ASDF", "File not found: " + e.getMessage());
-				} catch (IOException e) {
-					Log.d("ASDF", "Error accessing file: " + e.getMessage());
-				}
-
-			}
-		});
 	}
 
 	public static final int MEDIA_TYPE_IMAGE = 1;
@@ -277,8 +165,8 @@ public class DemoForCarmera extends Activity implements
 	}
 
 	public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-		mCamera.stopPreview();
-		mCamera.release();
+
+		mCameraController.closeCamera();
 		return true;
 	}
 
