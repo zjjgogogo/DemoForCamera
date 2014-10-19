@@ -1,9 +1,6 @@
 package com.example.demoforcarmera;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -12,7 +9,6 @@ import android.app.Activity;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,13 +19,13 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 
 import com.example.demoforcarmera.util.CameraController;
-import com.example.demoforcarmera.util.CameraHelper;
 import com.example.demoforcarmera.util.CameraHelper.CameraInfo2;
 
 public class DemoForCarmera extends Activity implements
 		TextureView.SurfaceTextureListener {
 
-	private TextureView mTextureView;
+	private com.example.demoforcarmera.view.CameraPreviewTextureView mTextureView;
+
 	private Button flashMode;
 
 	CameraController mCameraController;
@@ -41,7 +37,7 @@ public class DemoForCarmera extends Activity implements
 
 		setContentView(R.layout.activity_demo_for_carmera);
 
-		mTextureView = (TextureView) findViewById(R.id.surface_view);
+		mTextureView = (com.example.demoforcarmera.view.CameraPreviewTextureView) findViewById(R.id.surface_view);
 		mTextureView.setSurfaceTextureListener(this);
 
 		flashMode = (Button) findViewById(R.id.flash_mode);
